@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bates Auto Salvage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand" onclick="go('home')">
+      <div class="mark">BA</div>
+      <div>
+        <h1 id="yard-name">Bates Auto Salvage</h1>
+        <p id="yard-tag">Used OEM parts · Yard pickup</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <button data-view="home" class="active" onclick="go('home')">Home</button>
+      <button data-view="shop" onclick="go('shop')">Yard inventory</button>
+      <button data-view="request" onclick="go('request')">Request a part</button>
+      <button data-view="office" onclick="go('office')">Office</button>
+    </nav>
+  </header>
+  <section id="view-home">
+    <div class="hero">
+      <div class="pills"><span class="pill">Used OEM</span><span class="pill">Pull + counter</span><span class="pill">We buy junk cars</span></div>
+      <h2>Parts off the yard.<br>Request sent to the office.</h2>
+      <p>Search listed parts or send year / make / model. Office chats back from one inbox.</p>
+      <div class="actions">
+        <button class="btn" onclick="go('shop')">Browse parts</button>
+        <button class="ghost" onclick="go('request')">Need a part?</button>
+        <button class="btn dark" onclick="toggleChat()">Chat the office</button>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="grid cards-4">
+        <div class="card"><b class="stat" id="stat-parts">0</b><div class="muted">Parts listed</div></div>
+        <div class="card"><b class="stat" id="stat-req">0</b><div class="muted">Open requests</div></div>
+        <div class="card"><b class="stat" id="home-hours">Mon–Sat</b><div class="muted">Yard hours</div></div>
+        <div class="card"><b class="stat" id="home-phone">Call</b><div class="muted">Office line</div></div>
+      </div>
+      <div class="card">
+        <h3>How Bates runs this app</h3>
+        <p class="muted" id="home-address"></p>
+        <ol>
+          <li>Office uploads a part with photos, price, and yard row.</li>
+          <li>Customer finds it or submits a request.</li>
+          <li>Chat stays in one office inbox.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+  <section id="view-shop" class="wrap hidden">
+    <div class="card">
+      <h2>Yard inventory</h2>
+      <p class="muted" id="shop-count"></p>
+      <div class="filters">
+        <input id="q" placeholder="Search part, car, bin..." oninput="filterShop()" />
+        <select id="f-year" onchange="filterShop()"></select>
+        <select id="f-make" onchange="filterShop()"></select>
+        <input id="f-model" placeholder="Model" oninput="filterShop()" />
+      </div>
+    </div>
+    <div id="shop-grid" class="grid cards-3"></div>
+  </section>
+  <section id="view-detail" class="wrap hidden">
+    <button class="ghost" onclick="go('shop')">Back to inventory</button>
+    <div id="detail" class="card"></div>
+  </section>
+  <section id="view-request" class="wrap hidden">
+    <div class="two">
+      <form id="rq-form" class="card" onsubmit="submitRequest(event)">
+        <h2>Request a part</h2>
+        <div class="row"><div><label>Your name</label><input id="rq-name" required /></div><div><label>Phone</label><input id="rq-phone" required /></div></div>
+        <div class="row"><div><label>Year</label><input id="rq-year" required /></div><div><label>Make</label><input id="rq-make" required /></div></div>
+        <div class="row"><div><label>Model</label><input id="rq-model" required /></div><div><label>Part needed</label><input id="rq-part" required /></div></div>
+        <label>Notes / VIN</label><textarea id="rq-notes" rows="4"></textarea>
+        <button class="btn" type="submit">Send to office</button>
+        <p id="rq-done" class="hidden">Request landed. Use chat for follow-up.</p>
+      </form>
+      <div class="card">
+        <h3>What to send</h3>
+        <ul><li>Year, make, model, engine</li><li>Photo or OEM number</li><li>Pickup or hold</li></ul>
+      </div>
+    </div>
+  </section>
+  <section id="view-office" class="wrap hidden">
+    <div id="office-gate" class="card login">
+      <h2>Office desk</h2>
+      <p class="muted">Demo PIN is <b>1234</b>.</p>
+      <form onsubmit="tryLogin(event)">
+        <input id="pin" type="password" placeholder="PIN" />
+        <button class="btn dark" type="submit">Unlock</button>
+        <p id="pin-err" class="muted"></p>
+      </form>
+    </div>
+    <div id="office-app" class="hidden">
+      <div class="actions">
+        <button class="ghost" onclick="exportData()">Export JSON backup</button>
+        <button class="ghost" onclick="resetDemo()">Reset sample data</button>
+        <button class="btn steel" onclick="logoutOffice()">Lock office</button>
+      </div>
+      <div class="two">
+        <form id="part-form" class="card" onsubmit="addPart(event)">
+          <h2 id="part-form-title">Upload a part</h2>
+          <input type="hidden" id="p-id" />
+          <label>Part name</label><input id="p-name" required />
+          <div class="row"><div><label>Year</label><input id="p-year" required /></div><div><label>Make</label><input id="p-make" required /></div></div>
+          <div class="row"><div><label>Model</label><input id="p-model" required /></div><div><label>Engine</label><input id="p-engine" /></div></div>
+          <div class="row"><div><label>Price $</label><input id="p-price" type="number" min="0" required /></div><div><label>Qty</label><input id="p-stock" type="number" min="0" value="1" /></div></div>
+          <div class="row"><div><label>Condition</label><select id="p-cond"><option>Used - Good</option><option>Used - Fair</option><option>Used - Tested</option><option>For parts</option></select></div><div><label>Category</label><select id="p-cat"><option>Body</option><option>Lighting</option><option>Drivetrain</option><option>Engine</option><option>Wheels</option><option>Interior</option><option>AC</option><option>Electrical</option></select></div></div>
+          <label>Yard location</label><input id="p-yard" />
+          <label>Notes</label><textarea id="p-notes" rows="3"></textarea>
+          <label>Photos</label><input type="file" accept="image/*" multiple onchange="handlePhotos(this)" />
+          <div id="photo-preview" class="photo-preview"></div>
+          <button class="btn dark" type="submit">Save to inventory</button>
+        </form>
+        <form class="card" onsubmit="saveSettings(event)">
+          <h2>Yard settings</h2>
+          <label>Business name</label><input id="set-name" />
+          <label>Phone</label><input id="set-phone" />
+          <label>Address</label><input id="set-address" />
+          <label>Hours</label><input id="set-hours" />
+          <button class="btn" type="submit">Save settings</button>
+        </form>
+      </div>
+      <div class="card"><h2>Inventory</h2><div style="overflow:auto"><table><thead><tr><th>Part</th><th>Price</th><th>Qty</th><th>Yard</th><th></th></tr></thead><tbody id="inv-table"></tbody></table></div></div>
+      <div class="two">
+        <div class="card"><h2>Customer requests</h2><div style="overflow:auto"><table><thead><tr><th>Customer</th><th>Need</th><th>Status</th><th>When</th><th></th></tr></thead><tbody id="req-table"></tbody></table></div></div>
+        <div class="card">
+          <h2>Office chat</h2>
+          <div id="office-threads"></div>
+          <div class="muted" id="office-thread-label">Website chat</div>
+          <div id="office-chat-log" class="chat-log"></div>
+          <div class="actions" style="margin:8px 0">
+            <button class="ghost" type="button" onclick="sendQuick('Send year, make, model, engine, and a photo of the old part.')">Ask fitment</button>
+            <button class="ghost" type="button" onclick="sendQuick('We have it. Ready for yard pickup today.')">Have it</button>
+          </div>
+          <form class="chat-compose" onsubmit="sendOfficeChat(event)">
+            <input id="office-msg" placeholder="Reply as office..." />
+            <button class="btn" type="submit">Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="chat-dock">
+    <div id="chat-box" class="chat-box hidden">
+      <div class="chat-head">Chat with Bates office</div>
+      <div id="chat-log" class="chat-log"></div>
+      <form class="chat-compose" onsubmit="sendCustomerChat(event)">
+        <input id="chat-msg" placeholder="Year, car, part..." />
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </div>
+    <button class="chat-toggle" onclick="toggleChat()">Office chat</button>
+  </div>
+  <footer>Bates Auto Salvage yard desk · PIN 1234</footer>
+  <script src="app.js"></script>
+</body>
+</html>
